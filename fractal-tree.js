@@ -104,14 +104,14 @@ function main(){
 }
 
 
-function generateTree(depth) {
+function generateTree(depth, minNbOfBranches, maxNbOfBranches) {
     if(tree !== null){
         scene.remove(tree.cylinder);
     }
 
     // recreate model
     tree = new Branch(null, 40, 0, 0);
-    addBranches(tree, 3, 5, depth);
+    addBranches(tree, depth, minNbOfBranches, maxNbOfBranches);
     
     // recreate the scene
     function addSceneObject(parent, branch){
@@ -137,7 +137,7 @@ function generateTree(depth) {
     addSceneObject(scene, tree);
 }
 
-function addBranches(parent, minNbOfBranches, maxNbOfBranches, depth) {
+function addBranches(parent, depth, minNbOfBranches, maxNbOfBranches) {
     if(parent.depthLevel < depth){
         const nbOfBranches = Math.round(Math.random() * (maxNbOfBranches - minNbOfBranches) + minNbOfBranches);
         const longitudeIncrement = parent.length / (nbOfBranches + 1);
@@ -153,7 +153,7 @@ function addBranches(parent, minNbOfBranches, maxNbOfBranches, depth) {
 
             parent.children.add(child);
 
-            addBranches(child, minNbOfBranches, maxNbOfBranches, depth);
+            addBranches(child, depth, minNbOfBranches, maxNbOfBranches);
         }
     }
 }

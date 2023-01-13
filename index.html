@@ -15,9 +15,24 @@
                     max: 6
                 });
 
+                var minSpinner = $( "#min-spinner" ).spinner({
+                    min: 0,
+                    max: 6
+                });
+
+                var maxSpinner = $( "#max-spinner" ).spinner({
+                    min: 1,
+                    max: 6
+                });
+
                 $( "#generate-button" ).on( "click", function() {
-                    if(depthSpinner.spinner("isValid")){
-                        generateTree(depthSpinner.spinner("value"));
+                    
+                    const min = minSpinner.spinner("value");
+                    const max = maxSpinner.spinner("value");
+
+                    if(depthSpinner.spinner("isValid") && minSpinner.spinner("isValid") && maxSpinner.spinner("isValid")
+                        && max >= min) {
+                        generateTree(depthSpinner.spinner("value"), min, max);
                     }
                 } );
 
@@ -33,8 +48,14 @@
             <h3>Options</h3>
             <div id="options">
                 <label for="depth-spinner">Recursion depth:</label>
-                <input id="depth-spinner" name="value" value="4">
+                <input id="depth-spinner" value="4">
                 
+                <label for="min-spinner">Min. number of children:</label>
+                <input id="min-spinner" value="2">
+
+                <label for="max-spinner">Max. number of children:</label>
+                <input id="max-spinner" value="5">
+
                 <button class="ui-button ui-widget ui-corner-all" id="generate-button">Generate</button>
             </div>
         </div>
