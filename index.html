@@ -10,22 +10,22 @@
 
         <script>
             $( function() {
-                var depthSpinner = $( "#depth-spinner" ).spinner({
+                var depthSpinner = $("#depth-spinner").spinner({
                     min: 2,
                     max: 6
                 });
 
-                var minSpinner = $( "#min-spinner" ).spinner({
+                var minSpinner = $("#min-spinner").spinner({
                     min: 0,
                     max: 6
                 });
 
-                var maxSpinner = $( "#max-spinner" ).spinner({
+                var maxSpinner = $("#max-spinner").spinner({
                     min: 1,
                     max: 6
                 });
 
-                $( "#generate-button" ).on( "click", function() {
+                $("#generate-button" ).on( "click", function() {
                     
                     const min = minSpinner.spinner("value");
                     const max = maxSpinner.spinner("value");
@@ -34,7 +34,9 @@
                         && max >= min) {
                         generateTree(depthSpinner.spinner("value"), min, max);
                     }
-                } );
+                });
+
+                $( "#reset-button" ).on( "click", resetView);
 
                 main();
             })
@@ -46,7 +48,7 @@
     <body>
         <div id="menu-bar">
             <h3>Options</h3>
-            <div id="options">
+            <div class="controls-box">
                 <label for="depth-spinner">Recursion depth:</label>
                 <input id="depth-spinner" value="4">
                 
@@ -57,6 +59,11 @@
                 <input id="max-spinner" value="5">
 
                 <button class="ui-button ui-widget ui-corner-all" id="generate-button">Generate</button>
+            </div>
+
+            <h3>Controls</h3>
+            <div class="controls-box">
+                <button class="ui-button ui-widget ui-corner-all" id="reset-button">Reset View</button>
             </div>
         </div>
         <canvas id="c"></canvas>

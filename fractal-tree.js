@@ -1,8 +1,11 @@
 import * as THREE from '../three.js-master/src/Three.js';
-//import * as THREE from 'https://cdn.skypack.dev/three';
+import { OrbitControls } from '../three.js-master/examples/jsm/controls/OrbitControls.js';
+// import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.121.1/src/Three.js';
+// import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.121.1/examples/jsm/controls/OrbitControls.js';
 
 const DEFAULT_ANGLE_RAD = 60 * Math.PI / 180; // 60 degrees
 const ROTATION_ANIMATION_INCREMENT = 10 * Math.PI / 180 * 0.001; // 10 degrees per second
+const ROOT_BRANCH_LENGTH = 40;
 
 class Branch {
     constructor(parent, length, longitude, angle){
@@ -23,6 +26,7 @@ class Branch {
 }
 
 var scene;
+var controls;
 var branchMaterial;
 var tree = null;
 
@@ -36,24 +40,27 @@ function main(){
     const fov = 75;
     const aspect = 2;  // default canvas is 300x150
     const near = 0.1;
-    const far = 100;
+    const far = 1000;
     const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+    controls = new OrbitControls(camera, renderer.domElement);
+
+    controls.target.set(0, ROOT_BRANCH_LENGTH / 2, 0);
 
     // camera default position (looking down -Z axis with +Y up, right-handed)
-    camera.position.z = 30;
-    camera.position.y = 20;
+    camera.position.set(0, 20, 30);
+    controls.update();
+    controls.saveState();
 
     scene = new THREE.Scene();
     
     branchMaterial = new THREE.MeshPhongMaterial({color: 0x44aa88});
 
-    // add lighting
-    const color = 0xFFFFFF; // white light
-    const intensity = 1;
-    const light = new THREE.DirectionalLight(color, intensity);
-
+    // add lights
+    const ambientlight = new THREE.AmbientLight( 0x404040 ); // soft white light
+    scene.add(ambientlight);
+    
+    const light = new THREE.DirectionalLight(0xFFFFFF, 1);
     light.position.set(-1, 2, 4);
-
     scene.add(light);
 
     scene.add(new THREE.AxesHelper(3));
@@ -158,5 +165,10 @@ function addBranches(parent, depth, minNbOfBranches, maxNbOfBranches) {
     }
 }
 
+function resetView(){
+    controls.reset();
+}
+
 window.main = main;
 window.generateTree = generateTree;
+window.resetView = resetView;

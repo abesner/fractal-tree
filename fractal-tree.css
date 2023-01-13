@@ -14,11 +14,11 @@ html, body {
     font-family: sans-serif;
 }
 
-#options > * {
+.controls-box > * {
     margin-bottom: 10px;
 }
 
-#options:last-child {
+.controls-box:last-child {
     margin-bottom: 0;
 }
 
