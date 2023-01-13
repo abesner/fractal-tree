@@ -2,6 +2,7 @@ import * as THREE from '../three.js-master/src/Three.js';
 //import * as THREE from 'https://cdn.skypack.dev/three';
 
 const DEFAULT_ANGLE_RAD = 60 * Math.PI / 180; // 60 degrees
+const ROTATION_ANIMATION_INCREMENT = 10 * Math.PI / 180 * 0.001; // 10 degrees per second
 
 class Branch {
     constructor(parent, length, longitude, angle){
@@ -17,8 +18,13 @@ class Branch {
         }
 
         this.children = new Set();
+        this.cylinder = null;
     }
 }
+
+var scene;
+var branchMaterial;
+var tree = null;
 
 function main(){
     const fullCircle = Math.PI * 2;
@@ -37,29 +43,9 @@ function main(){
     camera.position.z = 30;
     camera.position.y = 20;
 
-    const scene = new THREE.Scene();
+    scene = new THREE.Scene();
     
-    const material = new THREE.MeshPhongMaterial({color: 0x44aa88});
-    
-    const rootBranch = generateTree(3, 5, 6);
-    console.log(rootBranch);
-
-    function addSceneObject(parent, branch){
-        const geometry = new THREE.CylinderGeometry(0.1, 0.1, branch.length, 20);
-        const cylinder = new THREE.Mesh(geometry, material);
-
-        geometry.translate(0, branch.length / 2, 0);
-        cylinder.translateY(branch.longitude);
-        cylinder.rotateZ(branch.angle);
-
-        parent.add(cylinder);
-
-        branch.children.forEach(child => {
-            addSceneObject(cylinder, child);
-        });
-    }
-
-    addSceneObject(scene, rootBranch);
+    branchMaterial = new THREE.MeshPhongMaterial({color: 0x44aa88});
 
     // add lighting
     const color = 0xFFFFFF; // white light
@@ -89,12 +75,27 @@ function main(){
         camera.updateProjectionMatrix();
     }
 
+    function animateBranches(parent, rotationAngle){
+        // TODO: this is cheating, since it is the parent branch that is rotating on itself, and not the children rotation aroung the parent axis
+        parent.cylinder.rotateY(rotationAngle);
+        
+        parent.children.forEach(child => {
+            animateBranches(child, rotationAngle);
+        })
+    }
+
+    let lastFrameTime = 0;
+
     function render(time) {
         // responsive display
         if(resizeRendererToDisplaySize(renderer)){
             adjustCanvasToClient();
         }
         
+        const rotationAngle = ROTATION_ANIMATION_INCREMENT * (time - lastFrameTime);
+        lastFrameTime = time;
+        // animateBranches(rootBranch, rotationAngle);
+
         renderer.render(scene, camera);
         requestAnimationFrame(render);
     }
@@ -102,15 +103,41 @@ function main(){
     requestAnimationFrame(render);
 }
 
-function generateTree(minNbOfBranches, maxNbOfBranches, depth){
-    const rootBranch = new Branch(null, 40, 0, 0);
 
-    addBranches(rootBranch, minNbOfBranches, maxNbOfBranches, depth);
+function generateTree(depth) {
+    if(tree !== null){
+        scene.remove(tree.cylinder);
+    }
 
-    return rootBranch;
+    // recreate model
+    tree = new Branch(null, 40, 0, 0);
+    addBranches(tree, 3, 5, depth);
+    
+    // recreate the scene
+    function addSceneObject(parent, branch){
+        const geometry = new THREE.CylinderGeometry(0.1, 0.1, branch.length, 20);
+        const cylinder = new THREE.Mesh(geometry, branchMaterial);
+
+        branch.cylinder = cylinder;
+
+        geometry.translate(0, branch.length / 2, 0);
+        cylinder.translateY(branch.longitude);
+        cylinder.rotateZ(branch.angle);
+
+        const randomAngle = Math.random() * Math.PI * 2;
+        cylinder.rotateY(randomAngle);
+
+        parent.add(cylinder);
+
+        branch.children.forEach(child => {
+            addSceneObject(cylinder, child);
+        });
+    }
+
+    addSceneObject(scene, tree);
 }
 
-function addBranches(parent, minNbOfBranches, maxNbOfBranches, depth){
+function addBranches(parent, minNbOfBranches, maxNbOfBranches, depth) {
     if(parent.depthLevel < depth){
         const nbOfBranches = Math.round(Math.random() * (maxNbOfBranches - minNbOfBranches) + minNbOfBranches);
         const longitudeIncrement = parent.length / (nbOfBranches + 1);
@@ -131,4 +158,5 @@ function addBranches(parent, minNbOfBranches, maxNbOfBranches, depth){
     }
 }
 
-main();
+window.main = main;
+window.generateTree = generateTree;

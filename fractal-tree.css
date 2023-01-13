@@ -3,8 +3,27 @@ html, body {
     height: 100%;
 }
 
+#menu-bar {
+    float: left;
+    width: 200px;
+    height: 100%;
+    padding: 0 20px;
+    display: block;
+    background-color: #373837;
+    color: #c9c9c9;
+    font-family: sans-serif;
+}
+
+#options > * {
+    margin-bottom: 10px;
+}
+
+#options:last-child {
+    margin-bottom: 0;
+}
+
 #c {
-    width: 100%;
+    width: calc(100% - 240px);
     height: 100%;
     display: block;
 }

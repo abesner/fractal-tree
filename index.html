@@ -2,12 +2,42 @@
 <html>
     <head>
         <link rel="stylesheet" href="./fractal-tree.css">
+        <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+        
+        <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+        <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
         <script type="module" src="./fractal-tree.js"></script>
+
+        <script>
+            $( function() {
+                var depthSpinner = $( "#depth-spinner" ).spinner({
+                    min: 2,
+                    max: 6
+                });
+
+                $( "#generate-button" ).on( "click", function() {
+                    if(depthSpinner.spinner("isValid")){
+                        generateTree(depthSpinner.spinner("value"));
+                    }
+                } );
+
+                main();
+            })
+        </script>
     </head>
     
     <title>Fractal Tree</title>
 
     <body>
+        <div id="menu-bar">
+            <h3>Options</h3>
+            <div id="options">
+                <label for="depth-spinner">Recursion depth:</label>
+                <input id="depth-spinner" name="value" value="4">
+                
+                <button class="ui-button ui-widget ui-corner-all" id="generate-button">Generate</button>
+            </div>
+        </div>
         <canvas id="c"></canvas>
     </body>
 </html>
