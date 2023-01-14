@@ -1,11 +1,14 @@
 import * as THREE from '../three.js-master/src/Three.js';
 import { OrbitControls } from '../three.js-master/examples/jsm/controls/OrbitControls.js';
+import { GLTFLoader } from '../three.js-master/examples/jsm/loaders/GLTFLoader.js';
 // import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.121.1/src/Three.js';
 // import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.121.1/examples/jsm/controls/OrbitControls.js';
+// import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.121.1/examples/jsm/loaders/GLTFLoader.js';
 
 const DEFAULT_ANGLE_RAD = 60 * Math.PI / 180; // 60 degrees
 const ROTATION_ANIMATION_INCREMENT = 10 * Math.PI / 180 * 0.001; // 10 degrees per second
 const ROOT_BRANCH_LENGTH = 40;
+const FLOWER_POT_MODEL_PATH = './assets/flower-pot.glb';
 
 class Branch {
     constructor(parent, length, longitude, angle){
@@ -52,18 +55,23 @@ function main(){
     controls.saveState();
 
     scene = new THREE.Scene();
+
+    // add a flower pot to visualize the origin point
+    const loader = new GLTFLoader();
+    loader.load(FLOWER_POT_MODEL_PATH, function(gltfModel) {
+        scene.add(gltfModel.scene);
+        gltfModel.scene.scale.set(3,3,3);
+    });
     
     branchMaterial = new THREE.MeshPhongMaterial({color: 0x44aa88});
 
     // add lights
-    const ambientlight = new THREE.AmbientLight( 0x404040 ); // soft white light
+    const ambientlight = new THREE.AmbientLight(0x404040); // soft white light
     scene.add(ambientlight);
     
     const light = new THREE.DirectionalLight(0xFFFFFF, 1);
     light.position.set(-1, 2, 4);
     scene.add(light);
-
-    scene.add(new THREE.AxesHelper(3));
 
     function resizeRendererToDisplaySize(renderer) {
         const canvas = renderer.domElement;
