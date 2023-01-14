@@ -9,6 +9,7 @@ const DEFAULT_ANGLE_RAD = 60 * Math.PI / 180; // 60 degrees
 const ROTATION_ANIMATION_INCREMENT = 10 * Math.PI / 180 * 0.001; // 10 degrees per second
 const ROOT_BRANCH_LENGTH = 40;
 const FLOWER_POT_MODEL_PATH = './assets/flower-pot.glb';
+const SKYBOX_IMAGE_PATH = './assets/skybox.jpg';
 
 class Branch {
     constructor(parent, length, longitude, angle){
@@ -57,10 +58,18 @@ function main(){
     scene = new THREE.Scene();
 
     // add a flower pot to visualize the origin point
-    const loader = new GLTFLoader();
-    loader.load(FLOWER_POT_MODEL_PATH, function(gltfModel) {
+    const modelLoader = new GLTFLoader();
+    modelLoader.load(FLOWER_POT_MODEL_PATH, function(gltfModel) {
         scene.add(gltfModel.scene);
         gltfModel.scene.scale.set(3,3,3);
+    });
+
+    // load a skybox
+    const textureLoader = new THREE.TextureLoader();
+    const texture = textureLoader.load(SKYBOX_IMAGE_PATH, () => {
+        const target = new THREE.WebGLCubeRenderTarget(texture.image.height);
+        target.fromEquirectangularTexture(renderer, texture);
+        scene.background = target.texture;
     });
     
     branchMaterial = new THREE.MeshPhongMaterial({color: 0x44aa88});
