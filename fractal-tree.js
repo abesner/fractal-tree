@@ -8,13 +8,15 @@ import { GLTFLoader } from '../three.js-master/examples/jsm/loaders/GLTFLoader.j
 const DEFAULT_ANGLE_RAD = 60 * Math.PI / 180; // 60 degrees
 const ROTATION_ANIMATION_INCREMENT = 10 * Math.PI / 180 * 0.001; // 10 degrees per second
 const ROOT_BRANCH_LENGTH = 40;
+const ROOT_BRANCH_RADIUS = 0.75;
 const FLOWER_POT_MODEL_PATH = './assets/flower-pot.glb';
 const SKYBOX_IMAGE_PATH = './assets/skybox.jpg';
 
 class Branch {
-    constructor(parent, length, longitude, angle){
+    constructor(parent, length, radius, longitude, angle){
         this.parent = parent;
         this.length = length;
+        this.radius = radius;
         this.longitude = longitude;
         this.angle = angle;
         
@@ -33,11 +35,15 @@ var scene;
 var controls;
 var branchMaterial;
 var tree = null;
+var pointerSphere;
+
+const canvas = document.querySelector('#c');
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
 
 function main(){
     const fullCircle = Math.PI * 2;
 
-    const canvas = document.querySelector('#c');
     const renderer = new THREE.WebGLRenderer({canvas});
 
     // frustum and camera
@@ -73,6 +79,12 @@ function main(){
     });
     
     branchMaterial = new THREE.MeshPhongMaterial({color: 0x44aa88});
+
+    const pointerSphereMaterial = new THREE.MeshPhongMaterial({color: 0xddfc62});
+    const pointerSphereGeom = new THREE.SphereGeometry(0.5, 20, 20);
+    pointerSphere = new THREE.Mesh(pointerSphereGeom, pointerSphereMaterial);
+    pointerSphere.visible = false;
+    scene.add(pointerSphere);
 
     // add lights
     const ambientlight = new THREE.AmbientLight(0x404040); // soft white light
@@ -120,6 +132,21 @@ function main(){
         lastFrameTime = time;
         // animateBranches(rootBranch, rotationAngle);
 
+        // update the picking ray with the camera and pointer position
+        raycaster.setFromCamera(pointer, camera);
+
+        if(tree !== null) {
+            // calculate objects intersecting the picking ray
+            const intersects = raycaster.intersectObject(tree.cylinder);
+            
+            if (intersects.length > 0) {
+                pointerSphere.position.copy(intersects[0].point);
+                pointerSphere.visible = true;
+            } else {
+                pointerSphere.visible = false;
+            }
+        }
+
         renderer.render(scene, camera);
         requestAnimationFrame(render);
     }
@@ -134,12 +161,12 @@ function generateTree(depth, minNbOfBranches, maxNbOfBranches) {
     }
 
     // recreate model
-    tree = new Branch(null, 40, 0, 0);
+    tree = new Branch(null, ROOT_BRANCH_LENGTH, ROOT_BRANCH_RADIUS, 0, 0);
     addBranches(tree, depth, minNbOfBranches, maxNbOfBranches);
     
     // recreate the scene
     function addSceneObject(parent, branch){
-        const geometry = new THREE.CylinderGeometry(0.1, 0.1, branch.length, 20);
+        const geometry = new THREE.CylinderGeometry(branch.radius * 0.7, branch.radius, branch.length, 10);
         const cylinder = new THREE.Mesh(geometry, branchMaterial);
 
         branch.cylinder = cylinder;
@@ -172,7 +199,7 @@ function addBranches(parent, depth, minNbOfBranches, maxNbOfBranches) {
         }
 
         for(let i = 1; i <= nbOfBranches; i++){
-            const child = new Branch(parent, parent.length / 3, i * longitudeIncrement, angle);
+            const child = new Branch(parent, parent.length / 3, parent.radius / 2, i * longitudeIncrement, angle);
             angle *= -1;
 
             parent.children.add(child);
@@ -185,6 +212,17 @@ function addBranches(parent, depth, minNbOfBranches, maxNbOfBranches) {
 function resetView(){
     controls.reset();
 }
+
+function onPointerMove( event ) {
+	/*
+     * calculate pointer position in normalized device coordinates
+     * (-1 to +1) for both component
+     */
+	pointer.x = ((event.clientX - canvas.offsetLeft) / canvas.width) * 2 - 1;
+	pointer.y = - ((event.clientY - canvas.offsetTop) / canvas.height) * 2 + 1;
+}
+
+canvas.addEventListener('pointermove', onPointerMove);
 
 window.main = main;
 window.generateTree = generateTree;
