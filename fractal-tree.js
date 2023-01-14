@@ -21,7 +21,7 @@ class Branch {
         this.angle = angle;
         
         if (parent === null) {
-            this.depthLevel = 1;
+            this.depthLevel = 0;
         } else {
             this.depthLevel = parent.depthLevel + 1;
         }
@@ -35,7 +35,11 @@ var scene;
 var controls;
 var branchMaterial;
 var tree = null;
-var pointerSphere;
+
+var isInBranchAdditionMode = true;
+var pickingSphere;
+var pickingBranch = null;
+var isPickingBranch = false;
 
 const canvas = document.querySelector('#c');
 const raycaster = new THREE.Raycaster();
@@ -78,13 +82,13 @@ function main(){
         scene.background = target.texture;
     });
     
-    branchMaterial = new THREE.MeshPhongMaterial({color: 0x44aa88});
+    branchMaterial = new THREE.MeshPhongMaterial({color: 0x367c35});
 
     const pointerSphereMaterial = new THREE.MeshPhongMaterial({color: 0xddfc62});
-    const pointerSphereGeom = new THREE.SphereGeometry(0.5, 20, 20);
-    pointerSphere = new THREE.Mesh(pointerSphereGeom, pointerSphereMaterial);
-    pointerSphere.visible = false;
-    scene.add(pointerSphere);
+    const pointerSphereGeom = new THREE.SphereGeometry(0.4, 20, 20);
+    pickingSphere = new THREE.Mesh(pointerSphereGeom, pointerSphereMaterial);
+    pickingSphere.visible = false;
+    scene.add(pickingSphere);
 
     // add lights
     const ambientlight = new THREE.AmbientLight(0x404040); // soft white light
@@ -132,21 +136,31 @@ function main(){
         lastFrameTime = time;
         // animateBranches(rootBranch, rotationAngle);
 
-        // update the picking ray with the camera and pointer position
-        raycaster.setFromCamera(pointer, camera);
-
-        if(tree !== null) {
-            // calculate objects intersecting the picking ray
-            const intersects = raycaster.intersectObject(tree.cylinder);
+        if(isInBranchAdditionMode) {
+            // update the picking ray with the camera and pointer position
+            raycaster.setFromCamera(pointer, camera);
             
-            if (intersects.length > 0) {
-                pointerSphere.position.copy(intersects[0].point);
-                pointerSphere.visible = true;
-            } else {
-                pointerSphere.visible = false;
+            if(tree !== null) {
+                // calculate objects intersecting the picking ray
+                const intersects = raycaster.intersectObject(tree.cylinder);
+                
+                if (intersects.length > 0) {
+                    pickingSphere.position.copy(intersects[0].point);
+                    
+                    pickingBranch = intersects[0].object.userData.branch;
+                    const scaleFactor = 1 / Math.pow(2, pickingBranch.depthLevel);
+                    pickingSphere.scale.set(scaleFactor, scaleFactor, scaleFactor);
+                    
+                    isPickingBranch = true;
+                } else {
+                    pickingBranch = null;
+                    isPickingBranch = false;
+                }
             }
         }
-
+            
+        pickingSphere.visible =  isInBranchAdditionMode && isPickingBranch;
+        
         renderer.render(scene, camera);
         requestAnimationFrame(render);
     }
@@ -169,15 +183,14 @@ function generateTree(depth, minNbOfBranches, maxNbOfBranches) {
         const geometry = new THREE.CylinderGeometry(branch.radius * 0.7, branch.radius, branch.length, 10);
         const cylinder = new THREE.Mesh(geometry, branchMaterial);
 
+        cylinder.userData.branch = branch;
         branch.cylinder = cylinder;
 
-        geometry.translate(0, branch.length / 2, 0);
-        cylinder.translateY(branch.longitude);
-        cylinder.rotateZ(branch.angle);
-
-        const randomAngle = Math.random() * Math.PI * 2;
-        cylinder.rotateY(randomAngle);
-
+        geometry.translate(0, branch.length / 2, 0); // branch root is at local origin
+        cylinder.translateY(branch.longitude); // move along the branch to longitude
+        cylinder.rotateY(Math.random() * Math.PI * 2); // rotate randomly around the branch
+        cylinder.rotateZ(branch.angle); // rotate away from parent branch
+        
         parent.add(cylinder);
 
         branch.children.forEach(child => {
@@ -189,7 +202,7 @@ function generateTree(depth, minNbOfBranches, maxNbOfBranches) {
 }
 
 function addBranches(parent, depth, minNbOfBranches, maxNbOfBranches) {
-    if(parent.depthLevel < depth){
+    if(parent.depthLevel < depth - 1){
         const nbOfBranches = Math.round(Math.random() * (maxNbOfBranches - minNbOfBranches) + minNbOfBranches);
         const longitudeIncrement = parent.length / (nbOfBranches + 1);
         
@@ -209,11 +222,56 @@ function addBranches(parent, depth, minNbOfBranches, maxNbOfBranches) {
     }
 }
 
+function addBranch(){
+    const branch = pickingBranch;
+    
+    if(branch === null) {
+        return;
+    }
+
+    /* 
+     * find longitude on branch (good enough approximation of the longitude even
+     * though the picking sphere is located at the branch's surface)
+     */
+    const branchWorldPos = new THREE.Vector3();
+    branch.cylinder.getWorldPosition(branchWorldPos);
+    const pickingWorldPos = new THREE.Vector3();
+    pickingSphere.getWorldPosition(pickingWorldPos);
+    const longitude = branchWorldPos.distanceTo(pickingWorldPos);
+
+    // find the rotation angle around the branch
+    const pickingLocalPos = branch.cylinder.worldToLocal(pickingWorldPos);
+    pickingLocalPos.y = 0; // place on the XZ plane
+    let rotationAngle = pickingLocalPos.angleTo(new THREE.Vector3(1, 0, 0)); // smallest angle (correct in 2 first quadrants)
+    if(pickingLocalPos.z > 0){
+        // third and fourth quadrants
+        rotationAngle = 2 * Math.PI - rotationAngle;
+    }
+
+    // add a child branch and its cylinder
+    // TODO: remove code duplication
+    const child = new Branch(branch, branch.length / 3, branch.radius / 2, longitude, DEFAULT_ANGLE_RAD);
+    branch.children.add(child);
+
+    const geometry = new THREE.CylinderGeometry(child.radius * 0.7, child.radius, child.length, 10);
+    const cylinder = new THREE.Mesh(geometry, branchMaterial);
+
+    cylinder.userData.branch = child;
+    child.cylinder = cylinder;
+
+    geometry.translate(0, child.length / 2, 0); // branch root is at local origin
+    cylinder.translateY(child.longitude); // move along the branch to longitude
+    cylinder.rotateY(rotationAngle); // rotate around the branch
+    cylinder.rotateZ(-child.angle); // rotate away from parent branch
+    
+    branch.cylinder.add(cylinder);
+}
+
 function resetView(){
     controls.reset();
 }
 
-function onPointerMove( event ) {
+function onPointerMove(event) {
 	/*
      * calculate pointer position in normalized device coordinates
      * (-1 to +1) for both component
@@ -222,7 +280,14 @@ function onPointerMove( event ) {
 	pointer.y = - ((event.clientY - canvas.offsetTop) / canvas.height) * 2 + 1;
 }
 
+function onClick(event) {
+    if(isInBranchAdditionMode && isPickingBranch) {
+        addBranch();
+    }
+}
+
 canvas.addEventListener('pointermove', onPointerMove);
+canvas.addEventListener('click', onClick);
 
 window.main = main;
 window.generateTree = generateTree;
