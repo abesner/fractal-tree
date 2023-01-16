@@ -24,8 +24,9 @@
                     min: 1,
                     max: 6
                 });
-
-                $("#generate-button" ).on( "click", function() {
+                
+                var generateButton = $("#generate-button" ).button();
+                generateButton.on( "click", function() {
                     
                     const min = minSpinner.spinner("value");
                     const max = maxSpinner.spinner("value");
@@ -36,7 +37,33 @@
                     }
                 });
 
-                $( "#reset-button" ).on( "click", resetView);
+                var resetButton = $( "#reset-button" ).button();
+                resetButton.on( "click", resetView);
+
+                var playPauseButton = $("#play-pause-button").button();
+                playPauseButton.on( "click", function() {
+                    if(isAnimating()){
+                        pauseAnimation();
+                    } else {
+                        startAnimation();
+                    }
+
+                    const hasStartedAnimation = isAnimating(); // recheck since it most likely changed
+                    generateButton.button("option", "disabled", hasStartedAnimation);
+
+                    // change the button's icon accordingly
+                    playPauseButton.button( "option", "label", hasStartedAnimation ? "Pause Animation" : "Play Animation");
+                });
+
+                var speedSlider = $("#animation-speed").slider({
+                    value: 10,
+                    min: 10,
+                    max: 180,
+                    step: 1,
+                    slide: function(event, ui) {
+                        setAnimationSpeed(ui.value);
+                    }
+                });
 
                 main();
             })
@@ -49,21 +76,25 @@
         <div id="menu-bar">
             <h3>Options</h3>
             <div class="controls-box">
-                <label for="depth-spinner">Recursion depth:</label>
-                <input id="depth-spinner" value="4">
+                <label for="depth-spinner">Recursion depth:</label><br/>
+                <input id="depth-spinner" value="4"><br/>
                 
-                <label for="min-spinner">Min. number of children:</label>
-                <input id="min-spinner" value="2">
+                <label for="min-spinner">Min. number of children:</label><br/>
+                <input id="min-spinner" value="2"><br/>
 
-                <label for="max-spinner">Max. number of children:</label>
-                <input id="max-spinner" value="5">
+                <label for="max-spinner">Max. number of children:</label><br/>
+                <input id="max-spinner" value="5"><br/>
 
-                <button class="ui-button ui-widget ui-corner-all" id="generate-button">Generate</button>
+                <button id="generate-button">Generate</button>
             </div>
 
             <h3>Controls</h3>
             <div class="controls-box">
-                <button class="ui-button ui-widget ui-corner-all" id="reset-button">Reset View</button>
+                <button id="reset-button">Reset View</button><br/>
+                <br/>
+                <button id="play-pause-button">Play Animation</button><br/><br/>
+                <label for="animation-speed">Animation speed:</label><br/><br/>
+                <div id="animation-speed"></div><br/>
             </div>
         </div>
         <canvas id="c"></canvas>

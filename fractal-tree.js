@@ -6,7 +6,7 @@ import { GLTFLoader } from '../three.js-master/examples/jsm/loaders/GLTFLoader.j
 // import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.121.1/examples/jsm/loaders/GLTFLoader.js';
 
 const DEFAULT_ANGLE_RAD = 60 * Math.PI / 180; // 60 degrees
-const ROTATION_ANIMATION_INCREMENT = 10 * Math.PI / 180 * 0.001; // 10 degrees per second
+const INITIAL_ANIMATION_INCREMENT = 10 * Math.PI / 180 * 0.001; // 10 degrees per second
 const ROOT_BRANCH_LENGTH = 40;
 const ROOT_BRANCH_RADIUS = 0.75;
 const FLOWER_POT_MODEL_PATH = './assets/flower-pot.glb';
@@ -35,6 +35,9 @@ var scene;
 var controls;
 var branchMaterial;
 var tree = null;
+
+var isInAnimationMode = false;
+var animationSpeed = INITIAL_ANIMATION_INCREMENT;
 
 var isInBranchAdditionMode = true;
 var pickingSphere;
@@ -115,15 +118,6 @@ function main(){
         camera.updateProjectionMatrix();
     }
 
-    function animateBranches(parent, rotationAngle){
-        // TODO: this is cheating, since it is the parent branch that is rotating on itself, and not the children rotation aroung the parent axis
-        parent.cylinder.rotateY(rotationAngle);
-        
-        parent.children.forEach(child => {
-            animateBranches(child, rotationAngle);
-        })
-    }
-
     let lastFrameTime = 0;
 
     function render(time) {
@@ -132,9 +126,11 @@ function main(){
             adjustCanvasToClient();
         }
         
-        const rotationAngle = ROTATION_ANIMATION_INCREMENT * (time - lastFrameTime);
+        const rotationAngle = animationSpeed * (time - lastFrameTime);
         lastFrameTime = time;
-        // animateBranches(rootBranch, rotationAngle);
+        if(isAnimating()){
+            animateBranches(rotationAngle);
+        }
 
         if(isInBranchAdditionMode) {
             // update the picking ray with the camera and pointer position
@@ -250,7 +246,7 @@ function addBranch(){
 
     // add a child branch and its cylinder
     // TODO: remove code duplication
-    const child = new Branch(branch, branch.length / 3, branch.radius / 2, longitude, DEFAULT_ANGLE_RAD);
+    const child = new Branch(branch, branch.length / 3, branch.radius / 2, longitude, -DEFAULT_ANGLE_RAD);
     branch.children.add(child);
 
     const geometry = new THREE.CylinderGeometry(child.radius * 0.7, child.radius, child.length, 10);
@@ -262,7 +258,7 @@ function addBranch(){
     geometry.translate(0, child.length / 2, 0); // branch root is at local origin
     cylinder.translateY(child.longitude); // move along the branch to longitude
     cylinder.rotateY(rotationAngle); // rotate around the branch
-    cylinder.rotateZ(-child.angle); // rotate away from parent branch
+    cylinder.rotateZ(child.angle); // rotate away from parent branch
     
     branch.cylinder.add(cylinder);
 }
@@ -286,9 +282,52 @@ function onClick(event) {
     }
 }
 
+function isAnimating(){
+    return isInAnimationMode;
+}
+
+function startAnimation(){
+    isInAnimationMode = true;
+    isInBranchAdditionMode = false;
+}
+
+function pauseAnimation(){
+    isInAnimationMode = false;
+    isInBranchAdditionMode = true;
+}
+
+function animateBranches(stepAngle){
+    if(tree == null){
+        return;
+    }
+
+    animateBranch(tree, stepAngle);
+}
+
+function animateBranch(branch, stepAngle) {
+    branch.children.forEach(child => {
+        animateBranch(child, stepAngle);
+    });
+
+    const parent = branch.parent;
+    if(parent !== null) {
+        branch.cylinder.rotateZ(-branch.angle);
+        branch.cylinder.rotateY(stepAngle);
+        branch.cylinder.rotateZ(branch.angle);
+    }
+}
+
+function setAnimationSpeed(speed) {
+    animationSpeed = speed * Math.PI / 180 * 0.001;
+}
+
 canvas.addEventListener('pointermove', onPointerMove);
 canvas.addEventListener('click', onClick);
 
 window.main = main;
 window.generateTree = generateTree;
 window.resetView = resetView;
+window.isAnimating = isAnimating;
+window.startAnimation = startAnimation;
+window.pauseAnimation = pauseAnimation;
+window.setAnimationSpeed = setAnimationSpeed;
