@@ -1,102 +1,103 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <link rel="stylesheet" href="./fractal-tree.css">
-        <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
-        
-        <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
-        <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
-        <script type="module" src="./fractal-tree.js"></script>
 
-        <script>
-            $( function() {
-                var depthSpinner = $("#depth-spinner").spinner({
-                    min: 2,
-                    max: 7
-                });
+<head>
+    <link rel="stylesheet" href="./fractal-tree.css">
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 
-                var minSpinner = $("#min-spinner").spinner({
-                    min: 0,
-                    max: 6
-                });
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+    <script type="module" src="./fractal-tree.js"></script>
 
-                var maxSpinner = $("#max-spinner").spinner({
-                    min: 1,
-                    max: 6
-                });
-                
-                var generateButton = $("#generate-button" ).button();
-                generateButton.on( "click", function() {
-                    
-                    const min = minSpinner.spinner("value");
-                    const max = maxSpinner.spinner("value");
+    <script>
+        $(function () {
+            var depthSpinner = $("#depth-spinner").spinner({
+                min: 2,
+                max: 5
+            });
 
-                    if(depthSpinner.spinner("isValid") && minSpinner.spinner("isValid") && maxSpinner.spinner("isValid")
-                        && max >= min) {
-                        generateTree(depthSpinner.spinner("value"), min, max);
-                    }
-                });
+            var minSpinner = $("#min-spinner").spinner({
+                min: 0,
+                max: 6
+            });
 
-                var resetButton = $( "#reset-button" ).button();
-                resetButton.on( "click", resetView);
+            var maxSpinner = $("#max-spinner").spinner({
+                min: 1,
+                max: 6
+            });
 
-                var playPauseButton = $("#play-pause-button").button();
-                playPauseButton.on( "click", function() {
-                    if(isAnimating()){
-                        pauseAnimation();
-                    } else {
-                        startAnimation();
-                    }
+            var generateButton = $("#generate-button").button();
+            generateButton.on("click", function () {
 
-                    const hasStartedAnimation = isAnimating(); // recheck since it most likely changed
-                    generateButton.button("option", "disabled", hasStartedAnimation);
+                const min = minSpinner.spinner("value");
+                const max = maxSpinner.spinner("value");
 
-                    // change the button's icon accordingly
-                    playPauseButton.button( "option", "label", hasStartedAnimation ? "Pause Animation" : "Play Animation");
-                });
+                if (depthSpinner.spinner("isValid") && minSpinner.spinner("isValid") && maxSpinner.spinner("isValid")
+                    && max >= min) {
+                    generateTree(depthSpinner.spinner("value"), min, max);
+                }
+            });
 
-                var speedSlider = $("#animation-speed").slider({
-                    value: 10,
-                    min: 10,
-                    max: 180,
-                    step: 1,
-                    slide: function(event, ui) {
-                        setAnimationSpeed(ui.value);
-                    }
-                });
+            var resetButton = $("#reset-button").button();
+            resetButton.on("click", resetView);
 
-                main();
-            })
-        </script>
-    </head>
-    
-    <title>Fractal Tree</title>
+            var playPauseButton = $("#play-pause-button").button();
+            playPauseButton.on("click", function () {
+                if (isAnimating()) {
+                    pauseAnimation();
+                } else {
+                    startAnimation();
+                }
 
-    <body>
-        <div id="menu-bar">
-            <h3>Options</h3>
-            <div class="controls-box">
-                <label for="depth-spinner">Recursion depth:</label><br/>
-                <input id="depth-spinner" value="4"><br/>
-                
-                <label for="min-spinner">Min. number of children:</label><br/>
-                <input id="min-spinner" value="2"><br/>
+                const hasStartedAnimation = isAnimating(); // recheck since it most likely changed
+                generateButton.button("option", "disabled", hasStartedAnimation);
 
-                <label for="max-spinner">Max. number of children:</label><br/>
-                <input id="max-spinner" value="5"><br/>
+                playPauseButton.button("option", "label", hasStartedAnimation ? "Pause Animation" : "Play Animation");
+            });
 
-                <button id="generate-button">Generate</button>
-            </div>
+            var speedSlider = $("#animation-speed").slider({
+                value: 10,
+                min: 10,
+                max: 180,
+                step: 1,
+                slide: function (event, ui) {
+                    setAnimationSpeed(ui.value);
+                }
+            });
 
-            <h3>Controls</h3>
-            <div class="controls-box">
-                <button id="reset-button">Reset View</button><br/>
-                <br/>
-                <button id="play-pause-button">Play Animation</button><br/><br/>
-                <label for="animation-speed">Animation speed:</label><br/><br/>
-                <div id="animation-speed"></div><br/>
-            </div>
+            init("#c");
+        })
+    </script>
+</head>
+
+<title>Fractal Tree</title>
+
+<body>
+    <div id="menu-bar">
+        <h3>Options</h3>
+        <div class="controls-box">
+            <label for="depth-spinner">Recursion depth:</label><br />
+            <input id="depth-spinner" value="4"><br />
+
+            <label for="min-spinner">Min. number of children:</label><br />
+            <input id="min-spinner" value="2"><br />
+
+            <label for="max-spinner">Max. number of children:</label><br />
+            <input id="max-spinner" value="5"><br />
+
+            <button id="generate-button">Generate</button>
         </div>
-        <canvas id="c"></canvas>
-    </body>
+
+        <h3>Controls</h3>
+        <div class="controls-box">
+            <button id="reset-button">Reset View</button><br />
+            <br />
+            <button id="play-pause-button">Play Animation</button><br /><br />
+            <label for="animation-speed">Animation speed:</label><br /><br />
+            <div id="animation-speed"></div><br />
+        </div>
+    </div>
+    <canvas id="c"></canvas>
+</body>
+
 </html>
