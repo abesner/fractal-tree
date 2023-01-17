@@ -2,8 +2,9 @@
 
 The goal of this project is to generate fractal-like pine tree structures using Three.js.
 
-<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/t339l2b7s3s" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-<br /><br />
+Below is a demonstration video.
+
+[![](https://markdown-videos.deta.dev/youtube/t339l2b7s3s)](https://youtu.be/t339l2b7s3s)
 
 # How to run the application
 
